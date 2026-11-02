@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: API de Prácticas Agropecuarias (Versión Corregida)
+  version: 1.1.0
+  description: Contrato actualizado con soporte para sincronización masiva de prácticas agropecuarias offline.
+paths:
+  /api/parcelas:
+    get:
+      summary: Consultar lista de parcelas agrícolas
+      responses:
+        '200':
+          description: Listado obtenido con éxito.
+  /api/practicas/sincronizar:
+    post:
+      summary: Sincronización masiva de prácticas agropecuarias acumuladas offline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dispositivo_id
+                - practicas
+              properties:
+                dispositivo_id:
+                  type: string
+                practicas:
+                  type: array
+                  items:
+                    type: object
+                    required: [parcela_id, tipo_practica, fecha]
+                    properties:
+                      parcela_id:
+                        type: integer
+                      tipo_practica:
+                        type: string
+                      fecha:
+                        type: string
+                        format: date-time
+      responses:
+        '200':
+          description: Prácticas sincronizadas exitosamente.
+        '400':
+          description: Estructura del lote inválida.
+        '409':
+          description: Conflicto por registros duplicados en el servidor.   

@@ -1,0 +1,103 @@
+openapi: 3.1.2
+info:
+  title: API de Préstamo de Equipos
+  version: 1.0.0
+  description: |
+    API para consultar equipos y administrar préstamos de equipos.
+servers:
+  - url: http://localhost:8000/api/v1
+paths:
+  /equipos:
+    get:
+      summary: Listar equipos
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [disponible, prestado, mantenimiento]
+      responses:
+        '200':
+          description: Lista de equipos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Equipo'
+  /prestamos:
+    post:
+      summary: Crear un préstamo
+      description: El usuario debe estar activo, tener menos de 2 préstamos y el equipo debe estar disponible[cite: 48].
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NuevoPrestamo'
+      responses:
+        '201':
+          description: Préstamo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prestamo'
+        '409':
+          description: Conflicto con regla de negocio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Equipo:
+      type: object
+      required: [id, tipo, marca, modelo, numeroInventario, estado]
+      properties:
+        id:
+          type: integer
+        tipo:
+          type: string
+        marca:
+          type: string
+        modelo:
+          type: string
+        numeroInventario:
+          type: string
+        estado:
+          type: string
+          enum: [disponible, prestado, mantenimiento]
+    NuevoPrestamo:
+      type: object
+      required: [usuariold, equipold, fechaEsperadaDevolucion]
+      properties:
+        usuariold:
+          type: integer
+          minimum: 1
+        equipold:
+          type: integer
+          minimum: 1
+        fechaEsperadaDevolucion:
+          type: string
+          format: date
+    Prestamo:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuariold:
+          type: integer
+        equipold:
+          type: integer
+        estado:
+          type: string
+          enum: [activo, devuelto]
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo:
+          type: string
+        mensaje:
+          type: string

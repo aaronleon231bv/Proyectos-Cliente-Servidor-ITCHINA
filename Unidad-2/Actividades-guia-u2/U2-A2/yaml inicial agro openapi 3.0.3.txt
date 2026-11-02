@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info:
+  title: API de Prácticas Agropecuarias (Versión Inicial)
+  version: 1.0.0
+  description: Contrato inicial para la gestión de parcelas y registro de prácticas agropecuarias.
+paths:
+  /api/parcelas:
+    get:
+      summary: Consultar lista de parcelas agrícolas
+      responses:
+        '200':
+          description: Listado de parcelas obtenido exitosamente.
+  /api/practicas:
+    post:
+      summary: Registrar una práctica agropecuaria individual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - parcela_id
+                - tipo_practica
+                - fecha
+              properties:
+                parcela_id:
+                  type: integer
+                tipo_practica:
+                  type: string
+                fecha:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Práctica agropecuaria registrada correctamente.
+        '400':
+          description: Datos de entrada malformados o incompletos.

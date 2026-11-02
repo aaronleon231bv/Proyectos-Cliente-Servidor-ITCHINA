@@ -1,0 +1,27 @@
+openapi: 3.1.2
+info:
+  title: API de Préstamo de Equipos
+  version: 0.1.0
+  description: |
+    API para consultar equipos y administrar préstamos de equipos en el IT Chiná.
+servers:
+  - url: http://localhost:8000/api/v1
+paths:
+  /equipos:
+    get:
+      summary: Listar equipos
+      responses:
+        '200':
+          description: Lista de equipos
+  /prestamos:
+    post:
+      summary: Crear un préstamo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Préstamo creado
