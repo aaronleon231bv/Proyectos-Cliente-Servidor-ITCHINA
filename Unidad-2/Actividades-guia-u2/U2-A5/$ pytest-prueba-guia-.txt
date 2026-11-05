@@ -1,0 +1,76 @@
+$ pytest
+tests/test_equipos.py::test_listar_equipos PASSED
+tests/test_equipos.py::test_equipo_inexistente PASSED
+tests/test_prestamos.py::test_crear_prestamo PASSED
+tests/test_prestamos.py::test_usuario_inactivo PASSED
+
+================ 4 passed in 0.42s =================
+```[cite: 21]
+
+---
+
+### 3. Requests y Responses (Ejemplos del Contrato)
+
+* **Ejemplo Request (Crear equipo válido - CP-02):**
+  * **Método y URL:** `POST /api/v1/equipos`[cite: 10]
+  * **Headers:** `Content-Type: application/json`[cite: 10]
+  * **Payload (JSON):**
+    ```json
+    {
+      "tipo": "laptop",
+      "marca": "HP",
+      "modelo": "ProBook 440",
+      "numero_inventario": "ITCH-PC-050"
+    }
+    ```[cite: 10]
+  * **Response (Código y JSON):** `201 Created`
+    ```json
+    {
+      "id": 50,
+      "tipo": "laptop",
+      "marca": "HP",
+      "modelo": "ProBook 440",
+      "numero_inventario": "ITCH-PC-050",
+      "estado": "disponible"
+    }
+    ```[cite: 10]
+
+---
+
+### 4. Evidencia de Base de Datos (Estado Antes y Después)
+Demostración de que la operación afecta consistentemente los registros relacionados[cite: 15]:
+
+* **Acción:** Creación de préstamo (`POST /api/v1/prestamos`) para el Usuario ID 1 y Equipo ID 1[cite: 10].
+* **Estado ANTES en BD:**
+  * Tabla `equipos` (ID 1): `estado = disponible`[cite: 8]
+  * Tabla `prestamos`: Sin registros activos para el equipo 1.
+* **Estado DESPUÉS en BD:**
+  * Tabla `prestamos`: Inserción exitosa con `estado = activo`[cite: 15].
+  * Tabla `equipos` (ID 1): Actualización a `estado = prestado`[cite: 15].
+
+---
+
+### 5. Bitácora de Defectos
+Registro formal de anomalías encontradas durante las fases de prueba[cite: 22, 23]:
+
+* **ID del Defecto:** `DEF-004`[cite: 22, 23]
+* **Caso Relacionado:** `CN-04` (Usuario inactivo intenta realizar préstamo)[cite: 22, 23]
+* **Fecha:** 06/10/2026[cite: 22]
+* **Endpoint:** `POST /api/v1/prestamos`[cite: 22]
+* **Resultado Esperado:** `409 Conflict` (Código: `USUARIO_INACTIVO`)[cite: 13, 14, 22]
+* **Resultado Obtenido:** `201 Created` (El sistema permitía el préstamo sin verificar el estatus del usuario)[cite: 22]
+* **Severidad:** `Alta` (Viola una regla de negocio crítica del sistema)[cite: 23]
+* **Estado:** Abierto[cite: 22]
+
+---
+
+### 6. Correcciones, Retest y Regresión
+
+* **Investigación de Causa Raíz:** Se detectó que en el servicio de préstamos se obtenía el usuario (`usuario = db.get(Usuario, datos.usuario_id)`), pero se omitió evaluar la condición condicional del negocio (`if not usuario.activo:`)[cite: 23].
+* **Corrección Aplicada:** Se añadió la validación en el código fuente (`services/prestamos.py`)[cite: 23, 24]:
+  ```python
+  if not usuario.activo:
+      raise AppError(409, "USUARIO_INACTIVO", "El usuario no puede realizar préstamos.")
+  ```[cite: 23]
+* **Retest:** Se volvió a ejecutar la prueba `CN-04`, obteniendo satisfactoriamente el código HTTP `409 Conflict` y la estructura de error limpia[cite: 23].
+* **Regresión:** Se re-ejecutaron las pruebas previas (`CP-03` préstamo válido, `CN-03` equipo ocupado) para verificar que la inserción de la nueva validación no afectó ni rompió el comportamiento de los demás endpoints[cite: 24].
