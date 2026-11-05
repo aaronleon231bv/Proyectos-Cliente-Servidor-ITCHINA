@@ -1,0 +1,72 @@
+$ pytest
+tests/test_practicas.py::test_listar_practicas PASSED
+tests/test_practicas.py::test_practica_inexistente PASSED
+tests/test_practicas.py::test_crear_practica PASSED
+tests/test_practicas.py::test_practica_duplicada PASSED
+
+================ 4 passed in 0.35s =================
+```[cite: 21]
+
+---
+
+### 3. Requests y Responses (Ejemplo del Contrato)
+
+* **Ejemplo Request (Registrar práctica válida - CP-02):**
+  * **Método y URL:** `POST /api/v1/practicas`[cite: 10]
+  * **Headers:** `Content-Type: application/json`[cite: 10]
+  * **Payload (JSON):**
+    ```json
+    {
+      "parcela_id": 3,
+      "tipo_practica": "Riego",
+      "fecha": "2026-11-02T10:30:00Z"
+    }
+    ```
+  * **Response (Código y JSON):** `201 Created`
+    ```json
+    {
+      "id": 1,
+      "parcela_id": 3,
+      "tipo_practica": "Riego",
+      "fecha": "2026-11-02T10:30:00Z"
+    }
+    ```[cite: 10]
+
+---
+
+### 4. Evidencia de Base de Datos (Estado Antes y Después)
+Demostración de que la operación afecta consistentemente los registros en el servidor[cite: 15]:
+
+* **Acción:** Registro de nueva práctica agrícola (`POST /api/v1/practicas`)[cite: 10].
+* **Estado ANTES en el sistema/base de datos:**
+  * Tabla/Memoria de prácticas: 0 registros asociados a la parcela 3.
+* **Estado DESPUÉS en el sistema/base de datos:**
+  * Inserción exitosa del registro con ID autoincremental `1` y persistencia confirmada para la parcela `3`[cite: 15].
+
+---
+
+### 5. Bitácora de Defectos
+Registro formal de anomalías encontradas durante las fases de validación del sistema[cite: 22, 23]:
+
+* **ID del Defecto:** `DEF-001`[cite: 22, 23]
+* **Caso Relacionado:** `CN-03` (Duplicidad de práctica en la misma parcela)[cite: 22, 23]
+* **Fecha:** 02/11/2026[cite: 22]
+* **Endpoint:** `POST /api/v1/practicas`[cite: 22]
+* **Resultado Esperado:** `409 Conflict` (Código: `PRACTICA_DUPLICADA`)[cite: 13, 22]
+* **Resultado Obtenido:** `201 Created` (El sistema permitía duplicar el registro sin restricciones iniciales)[cite: 22]
+* **Severidad:** `Alta` (Viola una regla de negocio del rancho)[cite: 23]
+* **Estado:** Abierto[cite: 22]
+
+---
+
+### 6. Correcciones, Retest y Regresión
+
+* **Investigación de Causa Raíz:** Se identificó que el endpoint encargado de procesar el registro realizaba el guardado directamente sin verificar si ya existía una práctica idéntica registrada para esa misma parcela[cite: 23].
+* **Corrección Aplicada:** Se añadió la validación lógica en el código del servidor para evaluar la existencia previa del registro y lanzar la excepción HTTP `409` en caso de coincidencia[cite: 23]:
+  ```python
+  # Validación implementada en el servicio
+  if any(p.parcela_id == datos.parcela_id and p.tipo_practica == datos.tipo_practica for p in practicas_db):
+      raise HTTPException(status_code=409, detail="La práctica ya se encuentra registrada para esta parcela.")
+  ```[cite: 23]
+* **Retest:** Se volvió a ejecutar la prueba `CN-03`, obteniendo satisfactoriamente el código HTTP `409 Conflict` esperado[cite: 23].
+* **Regresión:** Se re-ejecutaron las pruebas positivas anteriores (`CP-01` listar y `CP-02` crear) para confirmar que la aplicación del parche no alteró ni rompió el funcionamiento general de la API[cite: 24].
